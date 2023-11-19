@@ -16,6 +16,7 @@ namespace CS488LocalDB
         public Form1()
         {
             InitializeComponent();
+            List<MenuItem> FullMenu = new List<MenuItem>();
 
             Env ConnString = new Env();
             string ServerConn = ConnString.SrvConn;
@@ -23,7 +24,7 @@ namespace CS488LocalDB
 
             try
             {
-                SqlCommand get_menu = new SqlCommand("Select * from menu_items", conn);
+                SqlCommand get_menu = new SqlCommand("select MENU_ITEM_ID, MENU_ITEMS.PRODUCT_SUB_ID, PRODUCT_CAT.CATEGORY_ID, PRODUCT_CAT.DESCRIPTION, PRODUCT_SUB.DESCRIPTION, ITEM_PRICE from menu_items inner join PRODUCT_SUB on menu_items.PRODUCT_SUB_ID = PRODUCT_SUB.PRODUCT_SUB_ID inner join PRODUCT_CAT on PRODUCT_SUB.CATEGORY_ID = PRODUCT_CAT.CATEGORY_ID", conn);
                 conn.Open();
                 SqlDataReader menu = get_menu.ExecuteReader();
 
@@ -31,11 +32,11 @@ namespace CS488LocalDB
                 {
                     if (!(menu.Equals(null)))
                     {
-                        for (int i = 0; i < menu.FieldCount; i++)
-                        {
-                            string myString = menu.GetValue(i).ToString();
-                            Console.WriteLine(myString);
-                        }
+                        MenuItem meal = new MenuItem(
+                            menu.GetInt32(0), menu.GetInt32(1),
+                            menu.GetInt32(2), menu.GetValue(3).ToString(),
+                            menu.GetValue(4).ToString(), menu.GetDecimal(5));
+                        FullMenu.Add(meal);
                     }
                 }
             }
@@ -45,6 +46,10 @@ namespace CS488LocalDB
             }
             finally
             {
+                foreach (MenuItem meal in FullMenu)
+                {
+                    Console.WriteLine(meal.Item);
+                }
                 conn.Close();
             }
         }
