@@ -5,14 +5,15 @@ using System.Drawing;
 using System.Windows.Forms;
 using System.Reflection;
 using System.Linq;
+using System.Collections;
 
 namespace CS488LocalDB
 {
     public partial class Form1 : Form
     {
         // List of all items on the menu
-        List<MenuItem> FullMenu = new List<MenuItem>();
-        List<MenuItem> FullOrder = new List<MenuItem>();
+        readonly List<MenuItem> FullMenu = new List<MenuItem>();
+        readonly List<MenuItem> FullOrder = new List<MenuItem>();
 
         // Panels of each menu item
         readonly List<Panel> FoodPanels = new List<Panel>();
@@ -25,12 +26,13 @@ namespace CS488LocalDB
 
         decimal decSubTot = 0;
         decimal decTotal = 0;
-        double dblTaxRate = .1;
+        readonly double dblTaxRate = .1;
 
         public Form1()
         {
             InitializeComponent();
-            
+            ResetComponents();
+
             Env ConnString = new Env();
             string ServerConn = ConnString.SrvConn;
             SqlConnection conn = new SqlConnection(connectionString: ServerConn);
@@ -69,7 +71,7 @@ namespace CS488LocalDB
                     mealPanel.BorderStyle = BorderStyle.FixedSingle;
                     mealPanel.Left = leftMargin;
                     mealPanel.Top = (((innerHeight
-                        + topMargin) * i) + topMargin);
+                        + topMargin) * i) + topMargin +20);
 
                     MenuPanel.Controls.Add(mealPanel);
                     
@@ -79,6 +81,7 @@ namespace CS488LocalDB
             }
         }
         
+        // Creates panels to display items available to order
         public Panel CreateMenuPanel(MenuItem Meal)
         {
             Panel newMealPanel = new Panel
@@ -137,6 +140,8 @@ namespace CS488LocalDB
                 Width = 40,
                 Height = 20,
                 Visible = true,
+                Minimum = 0,
+                Maximum = 10,
                 Tag = Meal.Menu_id.ToString()
             };
 
@@ -166,14 +171,15 @@ namespace CS488LocalDB
             orderView.Items.Clear();
             decSubTot = 0;
             decTotal = 0;
-            total.Text = "";
-            subtotal.Text = "";
-            tax.Text = "";
+            total.Text = "--";
+            subtotal.Text = "--";
+            tax.Text = "--";
 
             return;
         }
 
-        private void MakeOrder_Click(object sender, EventArgs e)
+        // Creates list of items with values greater than 0
+        private void CreateOrder_Click(object sender, EventArgs e)
         {
             ResetComponents();
 
@@ -207,8 +213,8 @@ namespace CS488LocalDB
 
             for(int i =0; i < item_id.Length; i++)
             {
-                ListViewItem newItem = null;
-                MenuItem newOrder = null;
+                ListViewItem newItem;
+                MenuItem newOrder;
                 foreach(MenuItem meal in FullMenu)
                 {
                     if (meal.Menu_id == item_id[i])
@@ -231,12 +237,240 @@ namespace CS488LocalDB
             }
             subtotal.Text = decSubTot.ToString("C");
             tax.Text = (decSubTot * (decimal)dblTaxRate).ToString("C");
-            total.Text = (decSubTot + (decSubTot * (decimal)dblTaxRate)).ToString("C");
+            decTotal = (decSubTot + (decSubTot * (decimal)dblTaxRate));
+            total.Text = decTotal.ToString("C");
         }
 
-        private void placeOrder_Click(object sender, EventArgs e)
+        // Sends ordered items to the database
+        private void PlaceOrder_Click(object sender, EventArgs e)
         {
+            if (FullOrder.Count <= 0)
+            {
+                MessageBox.Show(
+                    "Click \"Add To Order\" to add your selected items.",
+                    "No items ordered");
+            }
+            else if ((!radioCash.Checked && !radioCheck.Checked && !radioCredit.Checked))
+            {
+                MessageBox.Show(
+                    "Please select a payment method to continue.",
+                    "No Payment Selected");
+            }
+            else
+            {
+                decimal sub_tot = decSubTot;
+                decimal tax = (decimal)dblTaxRate;
+                string pay_type = paymentBox.Controls.OfType<RadioButton>()
+                    .FirstOrDefault(r => r.Checked).Text;
 
+                Env DataLocation = new Env();
+
+                int cust_id = GetCustID();
+                int emp_id = GetEmpID();
+                int order_id = GetOrderID(cust_id, emp_id, sub_tot, tax, pay_type);
+
+                foreach (MenuItem newItem in FullOrder)
+                {
+                    string ConnString = DataLocation.SrvConn;
+                    string QueryString = "insert into order_details values(@order_id, @menu_id, @qty)";
+                    using (SqlConnection connection = new SqlConnection(ConnString))
+                    {
+                        SqlCommand get_command = new SqlCommand(QueryString, connection);
+                        get_command.Parameters.AddWithValue("@order_id", order_id);
+                        get_command.Parameters.AddWithValue("@menu_id", newItem.Menu_id);
+                        get_command.Parameters.AddWithValue("@qty", newItem.Quantity);
+
+                        get_command.Connection.Open();
+                        get_command.ExecuteNonQuery();
+                    }
+                }
+                //MessageBox.Show("Order placed successfully.", "Success");
+            }
+        }
+
+        // Returns Customer ID
+        private int GetCustID()
+        {
+            Env ConnString = new Env();
+            string ServerConn = ConnString.SrvConn;
+            SqlConnection conn = new SqlConnection(connectionString: ServerConn);
+
+            int cust_number = 0;
+
+            try
+            {
+                SqlCommand get_cust_num = new SqlCommand("select top 1 customer_id from customers", conn);
+                conn.Open();
+                SqlDataReader cust_num = get_cust_num.ExecuteReader();
+
+                while (cust_num.Read())
+                {
+                    if (!(cust_num.Equals(null)))
+                    {
+                        cust_number = cust_num.GetInt32(0);
+                    }
+                }
+            }
+            catch (SqlException sqlException)
+            {
+                MessageBox.Show(sqlException.Message);
+            }
+            finally
+            {
+                conn.Close();
+            }
+
+            return cust_number;
+        }
+
+        // Returns Employee ID
+        private int GetEmpID()
+        {
+            Env ConnString = new Env();
+            string ServerConn = ConnString.SrvConn;
+            SqlConnection conn = new SqlConnection(connectionString: ServerConn);
+
+            int emp_number = 0;
+
+            try
+            {
+                SqlCommand get_emp_num = new SqlCommand("select top 1 employee_id from employees", conn);
+                conn.Open();
+                SqlDataReader emp_num = get_emp_num.ExecuteReader();
+
+                while (emp_num.Read())
+                {
+                    if (!(emp_num.Equals(null)))
+                    {
+                        emp_number = emp_num.GetInt32(0);
+                    }
+                }
+            }
+            catch (SqlException sqlException)
+            {
+                MessageBox.Show(sqlException.Message);
+            }
+            finally
+            {
+                conn.Close();
+            }
+
+            return emp_number;
+        }
+
+        // Submits Order and returns the Order ID
+        private int GetOrderID(int cust_id, int emp_id, decimal sub_tot, decimal tax, string pay_type)
+        {
+            int order_number = 0;
+            Env DataLocation = new Env();
+            string ConnString = DataLocation.SrvConn;
+            string QueryString = "insert into orders output inserted.order_id values(@cust_id, @emp_id, @sub_tot, @tax, @pay_type)";
+            using (SqlConnection connection = new SqlConnection(ConnString))
+            {
+                SqlCommand get_command = new SqlCommand(QueryString, connection);
+                get_command.Parameters.AddWithValue("@cust_id", cust_id);
+                get_command.Parameters.AddWithValue("@emp_id", emp_id);
+                get_command.Parameters.AddWithValue("@sub_tot", sub_tot);
+                get_command.Parameters.AddWithValue("@tax", tax);
+                get_command.Parameters.AddWithValue("@pay_type", pay_type);
+
+                get_command.Connection.Open();
+                // is returning 1 row affected and not order_id
+                //string thing = 1;
+                order_number = (int)get_command.ExecuteScalar();
+            }
+
+            return order_number;
+        }
+
+        private void Button1_Click(object sender, EventArgs e)
+        {
+            Env DatabaseLocation = new Env();
+            string ConnectionString = DatabaseLocation.SrvConn;
+            SqlConnection conn = new SqlConnection(connectionString: ConnectionString);
+
+            try
+            {
+                SqlCommand get_details = new SqlCommand("select * from order_details", conn);
+                conn.Open();
+                SqlDataReader details = get_details.ExecuteReader();
+
+                Console.WriteLine(" ");
+                Console.WriteLine("---------------------------------------------------------");
+                Console.WriteLine("Order_id\t\t" + "Item_id\t\t" + "Quantity");
+
+                while (details.Read())
+                {
+                    if (!(details.Equals(null)))
+                    {
+                        Console.WriteLine(
+                            details.GetValue(0).ToString() + "\t\t\t" +
+                            details.GetValue(1).ToString() + "\t\t\t" +
+                            details.GetValue(2).ToString());
+                    }
+                }
+            }
+            catch (SqlException sqlException)
+            {
+                MessageBox.Show(sqlException.Message);
+            }
+            finally
+            {
+                conn.Close();
+            }
+        }
+
+        private void Button3_Click(object sender, EventArgs e)
+        {
+            Env DatabaseLocation = new Env();
+            string ConnectionString = DatabaseLocation.SrvConn;
+            SqlConnection conn = new SqlConnection(connectionString: ConnectionString);
+
+            try
+            {
+                SqlCommand get_orders = new SqlCommand("select * from orders", conn);
+                conn.Open();
+                SqlDataReader orders = get_orders.ExecuteReader();
+
+                Console.WriteLine(" ");
+                Console.WriteLine("---------------------------------------------------------");
+                Console.WriteLine("Order_id\t\t" + "Cust_id\t\t" + "Emp_id\t\t" + "Sub_Total\t\t" + "Tax\t\t\t" + "Pay");
+                while (orders.Read())
+                {
+                    if (!(orders.Equals(null)))
+                    {
+                        Console.WriteLine(
+                            orders.GetValue(0).ToString() + "\t\t\t" + orders.GetValue(1).ToString() + "\t\t\t" +
+                            orders.GetValue(2).ToString() + "\t\t\t" + orders.GetDecimal(3).ToString("0.00") + "\t\t\t" +
+                            orders.GetValue(4).ToString() + "\t\t" + orders.GetValue(5).ToString());
+                    }
+                }
+            }
+            catch (SqlException sqlException)
+            {
+                MessageBox.Show(sqlException.Message);
+            }
+            finally
+            {
+                conn.Close();
+            }
+        }
+
+        private void DeleteOrders(object sender, EventArgs e)
+        {
+            //MenuPanel.Visible = false;
+        }
+
+        private void customerToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            MenuPanel.Visible = true;
+            // Employee panel false
+        }
+
+        private void employeeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            MenuPanel.Visible = false;
+            // Employee panel true
         }
     }
 }
