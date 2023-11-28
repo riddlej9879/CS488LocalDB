@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Drawing;
 using System.Windows.Forms;
-using System.Reflection;
 using System.Linq;
-using System.Collections;
 
 namespace CS488LocalDB
 {
@@ -27,11 +25,15 @@ namespace CS488LocalDB
         decimal decSubTot = 0;
         decimal decTotal = 0;
         readonly double dblTaxRate = .1;
-
+        
         public Form1()
         {
             InitializeComponent();
+            ClearDefaultOrders();
+            InsertDefaultData();
+            InsertPrepStages();
             ResetComponents();
+            MenuPanel.Visible = true;
 
             Env ConnString = new Env();
             string ServerConn = ConnString.SrvConn;
@@ -80,7 +82,6 @@ namespace CS488LocalDB
                 conn.Close();
             }
         }
-        
         // Creates panels to display items available to order
         public Panel CreateMenuPanel(MenuItem Meal)
         {
@@ -163,7 +164,6 @@ namespace CS488LocalDB
 
             return newMealPanel;
         }
-
         // Clears mutable fields and objects
         public void ResetComponents()
         {
@@ -177,7 +177,6 @@ namespace CS488LocalDB
 
             return;
         }
-
         // Creates list of items with values greater than 0
         private void CreateOrder_Click(object sender, EventArgs e)
         {
@@ -240,7 +239,6 @@ namespace CS488LocalDB
             decTotal = (decSubTot + (decSubTot * (decimal)dblTaxRate));
             total.Text = decTotal.ToString("C");
         }
-
         // Sends ordered items to the database
         private void PlaceOrder_Click(object sender, EventArgs e)
         {
@@ -287,7 +285,6 @@ namespace CS488LocalDB
                 //MessageBox.Show("Order placed successfully.", "Success");
             }
         }
-
         // Returns Customer ID
         private int GetCustID()
         {
@@ -322,7 +319,6 @@ namespace CS488LocalDB
 
             return cust_number;
         }
-
         // Returns Employee ID
         private int GetEmpID()
         {
@@ -357,7 +353,6 @@ namespace CS488LocalDB
 
             return emp_number;
         }
-
         // Submits Order and returns the Order ID
         private int GetOrderID(int cust_id, int emp_id, decimal sub_tot, decimal tax, string pay_type)
         {
@@ -382,7 +377,7 @@ namespace CS488LocalDB
 
             return order_number;
         }
-
+        // Button to get the orders stored in the database
         private void Button1_Click(object sender, EventArgs e)
         {
             Env DatabaseLocation = new Env();
@@ -419,7 +414,7 @@ namespace CS488LocalDB
                 conn.Close();
             }
         }
-
+        // Button to get the data in order details table
         private void Button3_Click(object sender, EventArgs e)
         {
             Env DatabaseLocation = new Env();
@@ -455,19 +450,171 @@ namespace CS488LocalDB
                 conn.Close();
             }
         }
-
-        private void DeleteOrders(object sender, EventArgs e)
+        // Deletes the orders already in the database
+        private void ClearDefaultOrders()
         {
-            //MenuPanel.Visible = false;
+            ClearOrders clear = new ClearOrders();
+            DbConnection dbc = new DbConnection(clear.Clear_Default_Orders);
+
+            try
+            {
+                dbc.Connection.Open();
+                dbc.SqlCommand.ExecuteNonQuery();
+            }
+            catch (SqlException sqlException)
+            {
+                MessageBox.Show(sqlException.Message);
+            }
+            finally
+            {
+                dbc.Connection.Close();
+            }
+        }
+        // Inserts 2 orders and associated details
+        private void InsertDefaultData()
+        {
+            List<InsertDefaultDetails> defdet1 = new List<InsertDefaultDetails>();
+            List<InsertDefaultDetails> defdet2 = new List<InsertDefaultDetails>();
+            InsertDefaultOrders deford1 = new
+                InsertDefaultOrders(100, 1, (decimal)37.97, (decimal).1, "check");
+            InsertDefaultOrders deford2 = new
+                InsertDefaultOrders(100, 1, (decimal)53.98, (decimal).1, "cash");
+            DbConnection dbc1 = new DbConnection(deford1.QueryString);
+            dbc1.SqlCommand.Parameters.AddWithValue("@cust_id", deford1.Custid);
+            dbc1.SqlCommand.Parameters.AddWithValue("@emp_id", deford1.Empid);
+            dbc1.SqlCommand.Parameters.AddWithValue("@sub_tot", deford1.Subtot);
+            dbc1.SqlCommand.Parameters.AddWithValue("@tax", deford1.Tax);
+            dbc1.SqlCommand.Parameters.AddWithValue("@pay_type", deford1.Pay);
+            DbConnection dbc2 = new DbConnection(deford2.QueryString);
+            dbc2.SqlCommand.Parameters.AddWithValue("@cust_id", deford2.Custid);
+            dbc2.SqlCommand.Parameters.AddWithValue("@emp_id", deford2.Empid);
+            dbc2.SqlCommand.Parameters.AddWithValue("@sub_tot", deford2.Subtot);
+            dbc2.SqlCommand.Parameters.AddWithValue("@tax", deford2.Tax);
+            dbc2.SqlCommand.Parameters.AddWithValue("@pay_type", deford2.Pay);
+
+            int dbc1_OrdID = 0;
+            int dbc2_OrdID = 0;
+
+            try
+            {
+                dbc1.Connection.Open();
+                dbc1_OrdID = (int)dbc1.SqlCommand.ExecuteScalar();
+                dbc2.Connection.Open();
+                dbc2_OrdID = (int)dbc2.SqlCommand.ExecuteScalar();
+            }
+            catch (SqlException sqlException)
+            {
+                MessageBox.Show(sqlException.Message);
+            }
+            finally
+            {
+                dbc1.Connection.Close();
+                dbc2.Connection.Close();
+            }
+
+            if ((dbc1_OrdID > 0) && (dbc2_OrdID > 0))
+            {
+                DbConnection dbc3 = new DbConnection(new InsertDefaultDetails().QueryString);
+                // Order 1 details
+                defdet1.Add(new InsertDefaultDetails((int)dbc1_OrdID, 1, 1));
+                defdet1.Add(new InsertDefaultDetails((int)dbc1_OrdID, 3, 1));
+                defdet1.Add(new InsertDefaultDetails((int)dbc1_OrdID, 13, 1));
+                defdet1.Add(new InsertDefaultDetails((int)dbc1_OrdID, 21, 1));
+                // Order 2 details
+                defdet2.Add(new InsertDefaultDetails((int)dbc2_OrdID, 13, 2));
+                defdet2.Add(new InsertDefaultDetails((int)dbc2_OrdID, 23, 1));
+                defdet2.Add(new InsertDefaultDetails((int)dbc2_OrdID, 41, 2));
+
+                // Order 1 details
+                foreach (InsertDefaultDetails det in defdet1)
+                {
+                    dbc3.SqlCommand.Parameters.AddWithValue("@order_id", det.Orderid);
+                    dbc3.SqlCommand.Parameters.AddWithValue("@menu_id", det.Itemid);
+                    dbc3.SqlCommand.Parameters.AddWithValue("@qty", det.Qty);
+                    try
+                    {
+                        dbc3.Connection.Open();
+                        dbc3.SqlCommand.ExecuteNonQuery();
+                    }
+                    catch (SqlException sqlException)
+                    {
+                        MessageBox.Show(sqlException.Message);
+                    }
+                    finally
+                    {
+                        dbc3.SqlCommand.Parameters.Clear();
+                        dbc3.Connection.Close();
+                    }
+                }
+                // Order 2 details
+                foreach (InsertDefaultDetails det in defdet2)
+                {
+                    dbc3.SqlCommand.Parameters.AddWithValue("@order_id", det.Orderid);
+                    dbc3.SqlCommand.Parameters.AddWithValue("@menu_id", det.Itemid);
+                    dbc3.SqlCommand.Parameters.AddWithValue("@qty", det.Qty);
+                    try
+                    {
+                        dbc3.Connection.Open();
+                        dbc3.SqlCommand.ExecuteNonQuery();
+                    }
+                    catch (SqlException sqlException)
+                    {
+                        MessageBox.Show(sqlException.Message);
+                    }
+                    finally
+                    {
+                        dbc3.SqlCommand.Parameters.Clear();
+                        dbc3.Connection.Close();
+                    }
+                }
+            }
+        }
+        // Inserts order stages into the database
+        private void InsertPrepStages()
+        {
+            InsertPrepStages stages = new InsertPrepStages();
+            DbConnection dbc1 = new DbConnection(stages.QueryString);
+            DbConnection dbc2 = new DbConnection(stages.QueryString);
+            DbConnection dbc3 = new DbConnection(stages.QueryString);
+
+            dbc1.SqlCommand.Parameters.AddWithValue("@id", stages.Stage1_id);
+            dbc1.SqlCommand.Parameters.AddWithValue("@name", stages.Stage1_Name);
+            dbc1.SqlCommand.Parameters.AddWithValue("@desc", stages.Stage1_Desc);
+            dbc2.SqlCommand.Parameters.AddWithValue("@id", stages.Stage2_id);
+            dbc2.SqlCommand.Parameters.AddWithValue("@name", stages.Stage2_Name);
+            dbc2.SqlCommand.Parameters.AddWithValue("@desc", stages.Stage2_Desc);
+            dbc3.SqlCommand.Parameters.AddWithValue("@id", stages.Stage3_id);
+            dbc3.SqlCommand.Parameters.AddWithValue("@name", stages.Stage3_Name);
+            dbc3.SqlCommand.Parameters.AddWithValue("@desc", stages.Stage3_Desc);
+
+            try
+            {
+                dbc1.Connection.Open();
+                dbc2.Connection.Open();
+                dbc3.Connection.Open();
+                dbc1.SqlCommand.ExecuteNonQuery();
+                dbc2.SqlCommand.ExecuteNonQuery();
+                dbc3.SqlCommand.ExecuteNonQuery();
+            }
+            catch (SqlException sqlException)
+            {
+                MessageBox.Show(sqlException.Message);
+            }
+            finally
+            {
+                dbc1.Connection.Close();
+                dbc2.Connection.Close();
+                dbc3.Connection.Close();
+            }
         }
 
-        private void customerToolStripMenuItem_Click(object sender, EventArgs e)
+        private void CustomerToolStripMenuItem_Click(object sender, EventArgs e)
         {
             MenuPanel.Visible = true;
             // Employee panel false
         }
 
-        private void employeeToolStripMenuItem_Click(object sender, EventArgs e)
+        private void EmployeeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             MenuPanel.Visible = false;
             // Employee panel true
