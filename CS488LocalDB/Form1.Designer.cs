@@ -76,12 +76,14 @@ namespace CS488LocalDB
             this.btnTrackOrder = new System.Windows.Forms.Button();
             this.txtOrder = new System.Windows.Forms.TextBox();
             this.lblTrackOrder = new System.Windows.Forms.Label();
-            this.orderTrack = new System.Windows.Forms.ListView();
+            this.trackView = new System.Windows.Forms.ListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.label3 = new System.Windows.Forms.Label();
+            this.lblTxtTrackTot = new System.Windows.Forms.Label();
+            this.lblTrackTot = new System.Windows.Forms.Label();
             this.mealPanel12.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numBoxQty)).BeginInit();
             this.CreateOrderPanel.SuspendLayout();
@@ -191,7 +193,7 @@ namespace CS488LocalDB
             this.CreateOrderPanel.Controls.Add(this.placeOrder);
             this.CreateOrderPanel.Controls.Add(this.CreateOrder);
             this.CreateOrderPanel.Controls.Add(this.mealPanel12);
-            this.CreateOrderPanel.Location = new System.Drawing.Point(115, 27);
+            this.CreateOrderPanel.Location = new System.Drawing.Point(158, 45);
             this.CreateOrderPanel.Name = "CreateOrderPanel";
             this.CreateOrderPanel.Size = new System.Drawing.Size(808, 914);
             this.CreateOrderPanel.TabIndex = 2;
@@ -476,6 +478,8 @@ namespace CS488LocalDB
             // 
             // TrackOrderPanel
             // 
+            this.TrackOrderPanel.Controls.Add(this.lblTxtTrackTot);
+            this.TrackOrderPanel.Controls.Add(this.lblTrackTot);
             this.TrackOrderPanel.Controls.Add(this.lblTxtDesc);
             this.TrackOrderPanel.Controls.Add(this.lblTxtStage);
             this.TrackOrderPanel.Controls.Add(this.lblDesc);
@@ -483,9 +487,9 @@ namespace CS488LocalDB
             this.TrackOrderPanel.Controls.Add(this.btnTrackOrder);
             this.TrackOrderPanel.Controls.Add(this.txtOrder);
             this.TrackOrderPanel.Controls.Add(this.lblTrackOrder);
-            this.TrackOrderPanel.Controls.Add(this.orderTrack);
+            this.TrackOrderPanel.Controls.Add(this.trackView);
             this.TrackOrderPanel.Controls.Add(this.label3);
-            this.TrackOrderPanel.Location = new System.Drawing.Point(10, 222);
+            this.TrackOrderPanel.Location = new System.Drawing.Point(12, 41);
             this.TrackOrderPanel.Name = "TrackOrderPanel";
             this.TrackOrderPanel.Size = new System.Drawing.Size(808, 914);
             this.TrackOrderPanel.TabIndex = 20;
@@ -557,20 +561,20 @@ namespace CS488LocalDB
             this.lblTrackOrder.TabIndex = 7;
             this.lblTrackOrder.Text = "TRACKED ORDER";
             // 
-            // orderTrack
+            // trackView
             // 
-            this.orderTrack.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.trackView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader1,
             this.columnHeader2,
             this.columnHeader3,
             this.columnHeader4});
-            this.orderTrack.HideSelection = false;
-            this.orderTrack.Location = new System.Drawing.Point(410, 23);
-            this.orderTrack.Name = "orderTrack";
-            this.orderTrack.Size = new System.Drawing.Size(392, 200);
-            this.orderTrack.TabIndex = 6;
-            this.orderTrack.UseCompatibleStateImageBehavior = false;
-            this.orderTrack.View = System.Windows.Forms.View.Details;
+            this.trackView.HideSelection = false;
+            this.trackView.Location = new System.Drawing.Point(410, 23);
+            this.trackView.Name = "trackView";
+            this.trackView.Size = new System.Drawing.Size(392, 200);
+            this.trackView.TabIndex = 6;
+            this.trackView.UseCompatibleStateImageBehavior = false;
+            this.trackView.View = System.Windows.Forms.View.Details;
             // 
             // columnHeader1
             // 
@@ -601,6 +605,27 @@ namespace CS488LocalDB
             this.label3.Size = new System.Drawing.Size(136, 13);
             this.label3.TabIndex = 0;
             this.label3.Text = "ENTER ORDER NUMBER";
+            // 
+            // lblTxtTrackTot
+            // 
+            this.lblTxtTrackTot.Anchor = System.Windows.Forms.AnchorStyles.Right;
+            this.lblTxtTrackTot.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblTxtTrackTot.Location = new System.Drawing.Point(54, 230);
+            this.lblTxtTrackTot.Name = "lblTxtTrackTot";
+            this.lblTxtTrackTot.Size = new System.Drawing.Size(105, 20);
+            this.lblTxtTrackTot.TabIndex = 15;
+            this.lblTxtTrackTot.Text = "$1,000,000.00";
+            this.lblTxtTrackTot.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
+            // lblTrackTot
+            // 
+            this.lblTrackTot.AutoSize = true;
+            this.lblTrackTot.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblTrackTot.Location = new System.Drawing.Point(4, 230);
+            this.lblTrackTot.Name = "lblTrackTot";
+            this.lblTrackTot.Size = new System.Drawing.Size(44, 17);
+            this.lblTrackTot.TabIndex = 14;
+            this.lblTrackTot.Text = "Total:";
             // 
             // Form1
             // 
@@ -668,7 +693,7 @@ namespace CS488LocalDB
         private System.Windows.Forms.ToolStripMenuItem trackOrderToolStripMenuItem;
         private System.Windows.Forms.Panel TrackOrderPanel;
         private System.Windows.Forms.Label lblTrackOrder;
-        private System.Windows.Forms.ListView orderTrack;
+        private System.Windows.Forms.ListView trackView;
         private System.Windows.Forms.ColumnHeader columnHeader1;
         private System.Windows.Forms.ColumnHeader columnHeader2;
         private System.Windows.Forms.ColumnHeader columnHeader3;
@@ -683,6 +708,8 @@ namespace CS488LocalDB
         private System.Windows.Forms.Button BtnStages;
         private System.Windows.Forms.Button BtnGetAllCustIDs;
         private System.Windows.Forms.Button BtnGetAllEmpIDs;
+        private System.Windows.Forms.Label lblTxtTrackTot;
+        private System.Windows.Forms.Label lblTrackTot;
     }
 }
 
