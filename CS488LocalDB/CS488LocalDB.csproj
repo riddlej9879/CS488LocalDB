@@ -78,9 +78,6 @@
     <Compile Include="Globals.cs" />
     <Compile Include="InitialData.cs" />
     <Compile Include="MenuItem.cs" />
-    <Compile Include="pizza_dataset.cs">
-      <DependentUpon>pizza_dataset.xsd</DependentUpon>
-    </Compile>
     <Compile Include="pizza_dataset.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

@@ -204,11 +204,22 @@ namespace CS488LocalDB
         }
         public string QueryString { get; }
     }
-    class GetOrder
+    class TrackOrderTotal
     {
-        public GetOrder()
+        public TrackOrderTotal()
         {
-            QueryString = "select (subtotal + (subtotal * tax_rate)) as total from orders where order_id = @order_id";
+            QueryString = "select (subtotal + (subtotal * tax_rate)) from orders where order_id = @order_id";
+        }
+        public string QueryString { get; }
+    }
+    class TrackOrderDetails
+    {
+        public TrackOrderDetails()
+        {
+            QueryString = "select order_id, order_details.menu_item_id, menu_items.product_sub_id, product_cat.category_id,product_cat.description, product_sub.description, item_price, quantity " +
+                "from order_details inner join menu_items on order_details.menu_item_id = menu_items.menu_item_id " +
+                "inner join product_sub on menu_items.product_sub_id = product_sub.product_sub_id " +
+                "inner join product_cat on product_sub.category_id = product_cat.category_id where order_id = @order_id";
         }
         public string QueryString { get; }
     }

@@ -168,10 +168,12 @@ namespace CS488LocalDB
         {
             FullOrder.Clear();
             orderView.Items.Clear();
+            trackView.Items.Clear();
             decSubTot = 0;
             decTotal = 0;
             total.Text = "--";
             subtotal.Text = "--";
+            lblTxtTrackTot.Text = "--";
             tax.Text = "--";
 
             return;
@@ -263,6 +265,79 @@ namespace CS488LocalDB
             }
 
             return order_number;
+        }
+        // Gets order total
+        private string GetTrackTotal(int order_id)
+        {
+            string total = "";
+            DbConnection dbc_TrackOrderTotal = new DbConnection(new TrackOrderTotal().QueryString);
+            dbc_TrackOrderTotal.SqlCommand.Parameters.AddWithValue("@order_id", order_id);
+
+            try
+            {
+                dbc_TrackOrderTotal.Connection.Open();
+                SqlDataReader read_TrackOrderTotal = dbc_TrackOrderTotal.SqlCommand.ExecuteReader();
+                while (read_TrackOrderTotal.Read())
+                {
+                    if (!(read_TrackOrderTotal.Equals(null)))
+                    {
+                        total = (Math.Round(read_TrackOrderTotal.GetDecimal(0), 2)).ToString("C");
+                    }
+                }
+            }
+            catch (SqlException SqlException)
+            {
+                MessageBox.Show(SqlException.Message, "GetTrackTotal");
+            }
+            finally
+            {
+                dbc_TrackOrderTotal.Connection.Close();
+            }
+
+            return total;
+        }
+        private void TrackOrderList(int order_id)
+        {
+            trackView.Items.Clear();
+            ListViewItem trackItem;
+            string[] trackString;
+            DbConnection dbc_TrackOrderDetails = new DbConnection(new TrackOrderDetails().QueryString);
+            dbc_TrackOrderDetails.SqlCommand.Parameters.AddWithValue("@order_id", order_id);
+
+            try
+            {
+                dbc_TrackOrderDetails.Connection.Open();
+                SqlDataReader read_TrackDet = dbc_TrackOrderDetails.SqlCommand.ExecuteReader();
+                while (read_TrackDet.Read())
+                {
+                    if (!(read_TrackDet.Equals(null)))
+                    {
+                        for (int i = 0; i < read_TrackDet.FieldCount; i++)
+                        {
+                            trackString = new string[4]{
+                                read_TrackDet.GetValue(5).ToString(),
+                                read_TrackDet.GetValue(7).ToString(),
+                                read_TrackDet.GetDecimal(6).ToString("0.00"),
+                                (read_TrackDet.GetDecimal(6) * read_TrackDet.GetInt32(7)).ToString("C")
+                            };
+                            if (i == read_TrackDet.FieldCount - 1)
+                            {
+                                trackItem = new ListViewItem(new[]
+                                {
+                                    trackString[0], trackString[1], trackString[2], trackString[3]
+                                });
+                                trackView.Items.Add(trackItem);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (SqlException SqlException)
+            { MessageBox.Show(SqlException.Message); }
+            finally
+            {
+                dbc_TrackOrderDetails.Connection.Close();
+            }
         }
 
         /*************************************************************************************************/
@@ -382,8 +457,6 @@ namespace CS488LocalDB
         // Customer Track Order page
         private void BtnTrackOrder_Click(object sender, EventArgs e)
         {
-            ListViewItem newItem;
-
             lblTxtStage.Text = "--";
             lblTxtDesc.Text = "--";
             if (int.TryParse(txtOrder.Text, out int order))
@@ -403,6 +476,8 @@ namespace CS488LocalDB
                         {
                             lblTxtStage.Text = read_TrackOrder.GetString(2);
                             lblTxtDesc.Text = read_TrackOrder.GetString(3);
+                            lblTxtTrackTot.Text = GetTrackTotal(order);
+                            TrackOrderList(order);
                         }
                     }
                 }
@@ -435,7 +510,6 @@ namespace CS488LocalDB
                 dbc_getAllOrdDet.Connection.Open();
                 SqlDataReader allDetails = dbc_getAllOrdDet.SqlCommand.ExecuteReader();
                 
-
                 Console.WriteLine("");
                 Console.WriteLine("---------------------------------------------------------");
                 Console.WriteLine("Order_id\t\t" + "Item_id\t\t" + "Quantity");
@@ -664,11 +738,11 @@ namespace CS488LocalDB
         private void InsertDefaultOrders()
         {
             // Default data for orders 1 and 2 for table Orders
-            List<InsertDefaultOrders> DefOrders = new List<InsertDefaultOrders>();
-            DefOrders.Add(new InsertDefaultOrders(100, 1, (decimal)37.97, (decimal).1, "check"));
-            DefOrders.Add(new InsertDefaultOrders(100, 1, (decimal)53.98, (decimal).1, "cash"));
-            DefOrders.Add(new InsertDefaultOrders(100, 1, (decimal)35.49, (decimal).1, "credit"));
-            DefOrders.Add(new InsertDefaultOrders(100, 1, (decimal)454.80, (decimal).1, "credit"));
+            List<InsertDefaultOrders> DefOrders = new List<InsertDefaultOrders>
+            {   new InsertDefaultOrders(100, 1, (decimal)37.97, (decimal).1, "check"),
+                new InsertDefaultOrders(100, 1, (decimal)53.98, (decimal).1, "cash"),
+                new InsertDefaultOrders(100, 1, (decimal)35.49, (decimal).1, "credit"),
+                new InsertDefaultOrders(100, 1, (decimal)454.80, (decimal).1, "credit")};
             DbConnection dbc_AddDefaultOrder;
             DbConnection dbc_InsertOrderStage;
 
@@ -696,7 +770,7 @@ namespace CS488LocalDB
                     try
                     {
                         dbc_InsertOrderStage.Connection.Open();
-                        Console.WriteLine(dbc_InsertOrderStage.SqlCommand.ExecuteNonQuery());
+                        dbc_InsertOrderStage.SqlCommand.ExecuteNonQuery();
                     }
                     catch (SqlException SqlException)
                     { MessageBox.Show(SqlException.Message, "InsertDefaultOrders: Order Stage"); }
@@ -718,10 +792,6 @@ namespace CS488LocalDB
                     {
                         InsertDefaultOrderDetails(order_id, i);
                         i++;
-                    }
-                    else
-                    {
-                        Console.WriteLine("Order_id equals 0. Order_id: " + order_id);
                     }
                 }
             }
