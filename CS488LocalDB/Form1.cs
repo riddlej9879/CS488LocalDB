@@ -29,21 +29,21 @@ namespace CS488LocalDB
         public Form1()
         {
             InitializeComponent();
-            ClearDefaultOrders();
-            InsertDefaultData();
             InsertPrepStages();
+            ClearDefaultOrders();
+            InsertDefaultOrders();
             ResetComponents();
-            MenuPanel.Visible = true;
+            CreateOrderPanel.Visible = true;
+            CreateOrderPanel.Location = new Point(12, 27);
+            TrackOrderPanel.Visible = false;
+            TrackOrderPanel.Location = new Point(12, 27);
 
-            Env ConnString = new Env();
-            string ServerConn = ConnString.SrvConn;
-            SqlConnection conn = new SqlConnection(connectionString: ServerConn);
+            DbConnection dbc_menu = new DbConnection(new GetDatabaseMenu().QueryString);
 
             try
             {
-                SqlCommand get_menu = new SqlCommand("select MENU_ITEM_ID, MENU_ITEMS.PRODUCT_SUB_ID, PRODUCT_CAT.CATEGORY_ID, PRODUCT_CAT.DESCRIPTION, PRODUCT_SUB.DESCRIPTION, ITEM_PRICE from menu_items inner join PRODUCT_SUB on menu_items.PRODUCT_SUB_ID = PRODUCT_SUB.PRODUCT_SUB_ID inner join PRODUCT_CAT on PRODUCT_SUB.CATEGORY_ID = PRODUCT_CAT.CATEGORY_ID", conn);
-                conn.Open();
-                SqlDataReader menu = get_menu.ExecuteReader();
+                dbc_menu.Connection.Open();
+                SqlDataReader menu = dbc_menu.SqlCommand.ExecuteReader();
 
                 while (menu.Read())
                 {
@@ -63,7 +63,7 @@ namespace CS488LocalDB
             }
             catch (SqlException sqlException)
             {
-                MessageBox.Show(sqlException.Message);
+                MessageBox.Show(sqlException.Message, "Form 1");
             }
             finally
             {
@@ -75,11 +75,10 @@ namespace CS488LocalDB
                     mealPanel.Top = (((innerHeight
                         + topMargin) * i) + topMargin +20);
 
-                    MenuPanel.Controls.Add(mealPanel);
-                    
+                    CreateOrderPanel.Controls.Add(mealPanel);
                     i++;
                 }
-                conn.Close();
+                dbc_menu.Connection.Close();
             }
         }
         // Creates panels to display items available to order
@@ -177,6 +176,97 @@ namespace CS488LocalDB
 
             return;
         }
+        // Returns Customer ID
+        private int GetCustID()
+        {
+            DbConnection dbc_custId = new DbConnection(new GetCustomerID().QueryString);
+
+            int cust_number = 0;
+
+            try
+            {
+                dbc_custId.Connection.Open();
+                SqlDataReader cust_num = dbc_custId.SqlCommand.ExecuteReader();
+                while (cust_num.Read())
+                {
+                    if (!(cust_num.Equals(null)))
+                    {
+                        cust_number = cust_num.GetInt32(0);
+                    }
+                }
+            }
+            catch (SqlException sqlException)
+            {
+                MessageBox.Show(sqlException.Message, "Sql ");
+            }
+            finally
+            {
+                dbc_custId.Connection.Close();
+            }
+
+            return cust_number;
+        }
+        // Returns Employee ID
+        private int GetEmpID()
+        {
+            DbConnection dbc_empId = new DbConnection(new GetEmployeeID().QueryString);
+
+            int emp_number = 0;
+
+            try
+            {
+                dbc_empId.Connection.Open();
+                SqlDataReader emp_num = dbc_empId.SqlCommand.ExecuteReader();
+                while (emp_num.Read())
+                {
+                    if (!(emp_num.Equals(null)))
+                    {
+                        emp_number = emp_num.GetInt32(0);
+                    }
+                }
+            }
+            catch (SqlException sqlException)
+            {
+                MessageBox.Show(sqlException.Message, "GetEmpID");
+            }
+            finally
+            {
+                dbc_empId.Connection.Close();
+            }
+
+            return emp_number;
+        }
+        // Submits Order and returns the Order ID
+        private int GetOrderID(int cust_id, int emp_id, decimal sub_tot, decimal tax, string pay_type)
+        {
+            int order_number = 0;
+            DbConnection dbc_orderId = new DbConnection(new GetOrderID().QueryString);
+
+            dbc_orderId.SqlCommand.Parameters.AddWithValue("@cust_id", cust_id);
+            dbc_orderId.SqlCommand.Parameters.AddWithValue("@emp_id", emp_id);
+            dbc_orderId.SqlCommand.Parameters.AddWithValue("@sub_tot", sub_tot);
+            dbc_orderId.SqlCommand.Parameters.AddWithValue("@tax", tax);
+            dbc_orderId.SqlCommand.Parameters.AddWithValue("@pay_type", pay_type);
+
+            try
+            {
+                dbc_orderId.Connection.Open();
+                order_number = (int)dbc_orderId.SqlCommand.ExecuteScalar();
+            }
+            catch (SqlException sqlException)
+            {
+                MessageBox.Show(sqlException.Message, "GetOrderID");
+            }
+            finally
+            {
+                dbc_orderId.Connection.Close();
+            }
+
+            return order_number;
+        }
+
+        /*************************************************************************************************/
+        /*                                     Button_Click Handlers                                     */
         // Creates list of items with values greater than 0
         private void CreateOrder_Click(object sender, EventArgs e)
         {
@@ -190,7 +280,7 @@ namespace CS488LocalDB
             foreach (Panel pane in FoodPanels)
             {
                 int val = 0;
-                foreach(Control ctrl in pane.Controls)
+                foreach (Control ctrl in pane.Controls)
                 {
                     if (ctrl is NumericUpDown num)
                     {
@@ -210,11 +300,11 @@ namespace CS488LocalDB
             item_id = temp_id.ToArray();
             item_qty = temp_qty.ToArray();
 
-            for(int i =0; i < item_id.Length; i++)
+            for (int i = 0; i < item_id.Length; i++)
             {
                 ListViewItem newItem;
                 MenuItem newOrder;
-                foreach(MenuItem meal in FullMenu)
+                foreach (MenuItem meal in FullMenu)
                 {
                     if (meal.Menu_id == item_id[i])
                     {
@@ -261,195 +351,250 @@ namespace CS488LocalDB
                 string pay_type = paymentBox.Controls.OfType<RadioButton>()
                     .FirstOrDefault(r => r.Checked).Text;
 
-                Env DataLocation = new Env();
-
                 int cust_id = GetCustID();
                 int emp_id = GetEmpID();
                 int order_id = GetOrderID(cust_id, emp_id, sub_tot, tax, pay_type);
 
+                DbConnection dbc_placeOrder = new DbConnection(new PlaceOrder().QueryString);
+
                 foreach (MenuItem newItem in FullOrder)
                 {
-                    string ConnString = DataLocation.SrvConn;
-                    string QueryString = "insert into order_details values(@order_id, @menu_id, @qty)";
-                    using (SqlConnection connection = new SqlConnection(ConnString))
+                    dbc_placeOrder.SqlCommand.Parameters.AddWithValue("@order_id", order_id);
+                    dbc_placeOrder.SqlCommand.Parameters.AddWithValue("@menu_id", newItem.Menu_id);
+                    dbc_placeOrder.SqlCommand.Parameters.AddWithValue("@qty", newItem.Quantity);
+                    try
                     {
-                        SqlCommand get_command = new SqlCommand(QueryString, connection);
-                        get_command.Parameters.AddWithValue("@order_id", order_id);
-                        get_command.Parameters.AddWithValue("@menu_id", newItem.Menu_id);
-                        get_command.Parameters.AddWithValue("@qty", newItem.Quantity);
-
-                        get_command.Connection.Open();
-                        get_command.ExecuteNonQuery();
+                        dbc_placeOrder.Connection.Open();
+                        dbc_placeOrder.SqlCommand.ExecuteNonQuery();
+                    }
+                    catch (SqlException sqlException)
+                    {
+                        MessageBox.Show(sqlException.Message, "PlaceOrder_Click");
+                    }
+                    finally
+                    {
+                        dbc_placeOrder.Connection.Close();
+                        dbc_placeOrder.SqlCommand.Parameters.Clear();
                     }
                 }
-                //MessageBox.Show("Order placed successfully.", "Success");
             }
         }
-        // Returns Customer ID
-        private int GetCustID()
+        // Customer Track Order page
+        private void BtnTrackOrder_Click(object sender, EventArgs e)
         {
-            Env ConnString = new Env();
-            string ServerConn = ConnString.SrvConn;
-            SqlConnection conn = new SqlConnection(connectionString: ServerConn);
+            ListViewItem newItem;
 
-            int cust_number = 0;
-
-            try
+            lblTxtStage.Text = "--";
+            lblTxtDesc.Text = "--";
+            if (int.TryParse(txtOrder.Text, out int order))
             {
-                SqlCommand get_cust_num = new SqlCommand("select top 1 customer_id from customers", conn);
-                conn.Open();
-                SqlDataReader cust_num = get_cust_num.ExecuteReader();
-
-                while (cust_num.Read())
+                string TestQuery = "select order_id, order_stages.prep_stage_id, prep_stage_name, prep_stage_desc from order_stages full join prep_stages on order_stages.prep_stage_id = prep_stages.prep_stage_id where order_id = @order_id";
+                DbConnection dbc_TrackOrder = new DbConnection(TestQuery);
+                dbc_TrackOrder.SqlCommand.Parameters.AddWithValue("@order_id", order);
+                
+                try
                 {
-                    if (!(cust_num.Equals(null)))
+                    dbc_TrackOrder.Connection.Open();
+                    SqlDataReader read_TrackOrder = dbc_TrackOrder.SqlCommand.ExecuteReader();
+
+                    while (read_TrackOrder.Read())
                     {
-                        cust_number = cust_num.GetInt32(0);
+                        if (!(read_TrackOrder.Equals(null)))
+                        {
+                            lblTxtStage.Text = read_TrackOrder.GetString(2);
+                            lblTxtDesc.Text = read_TrackOrder.GetString(3);
+                        }
                     }
                 }
-            }
-            catch (SqlException sqlException)
-            {
-                MessageBox.Show(sqlException.Message);
-            }
-            finally
-            {
-                conn.Close();
-            }
-
-            return cust_number;
-        }
-        // Returns Employee ID
-        private int GetEmpID()
-        {
-            Env ConnString = new Env();
-            string ServerConn = ConnString.SrvConn;
-            SqlConnection conn = new SqlConnection(connectionString: ServerConn);
-
-            int emp_number = 0;
-
-            try
-            {
-                SqlCommand get_emp_num = new SqlCommand("select top 1 employee_id from employees", conn);
-                conn.Open();
-                SqlDataReader emp_num = get_emp_num.ExecuteReader();
-
-                while (emp_num.Read())
+                catch (SqlException sqlException)
                 {
-                    if (!(emp_num.Equals(null)))
-                    {
-                        emp_number = emp_num.GetInt32(0);
-                    }
+                    MessageBox.Show(sqlException.Message, "BtnTrackOrder_Click");
+                }
+                finally
+                {
+                    dbc_TrackOrder.SqlCommand.Parameters.Clear();
+                    dbc_TrackOrder.Connection.Close();
+                }
+                if (lblTxtStage.Text.Equals("--") && lblTxtDesc.Text.Equals("--"))
+                {
+                    MessageBox.Show("Order number not found", "No Order Number");
                 }
             }
-            catch (SqlException sqlException)
+            else
             {
-                MessageBox.Show(sqlException.Message);
+                MessageBox.Show("Please enter a valid number", "No Order Number");
             }
-            finally
-            {
-                conn.Close();
-            }
-
-            return emp_number;
-        }
-        // Submits Order and returns the Order ID
-        private int GetOrderID(int cust_id, int emp_id, decimal sub_tot, decimal tax, string pay_type)
-        {
-            int order_number = 0;
-            Env DataLocation = new Env();
-            string ConnString = DataLocation.SrvConn;
-            string QueryString = "insert into orders output inserted.order_id values(@cust_id, @emp_id, @sub_tot, @tax, @pay_type)";
-            using (SqlConnection connection = new SqlConnection(ConnString))
-            {
-                SqlCommand get_command = new SqlCommand(QueryString, connection);
-                get_command.Parameters.AddWithValue("@cust_id", cust_id);
-                get_command.Parameters.AddWithValue("@emp_id", emp_id);
-                get_command.Parameters.AddWithValue("@sub_tot", sub_tot);
-                get_command.Parameters.AddWithValue("@tax", tax);
-                get_command.Parameters.AddWithValue("@pay_type", pay_type);
-
-                get_command.Connection.Open();
-                // is returning 1 row affected and not order_id
-                //string thing = 1;
-                order_number = (int)get_command.ExecuteScalar();
-            }
-
-            return order_number;
         }
         // Button to get the orders stored in the database
-        private void Button1_Click(object sender, EventArgs e)
+        private void BtnGetAllDetails_Click(object sender, EventArgs e)
         {
-            Env DatabaseLocation = new Env();
-            string ConnectionString = DatabaseLocation.SrvConn;
-            SqlConnection conn = new SqlConnection(connectionString: ConnectionString);
+            DbConnection dbc_getAllOrdDet = new DbConnection(new GetAllOrderDetails().QueryString);
 
             try
             {
-                SqlCommand get_details = new SqlCommand("select * from order_details", conn);
-                conn.Open();
-                SqlDataReader details = get_details.ExecuteReader();
+                dbc_getAllOrdDet.Connection.Open();
+                SqlDataReader allDetails = dbc_getAllOrdDet.SqlCommand.ExecuteReader();
+                
 
-                Console.WriteLine(" ");
+                Console.WriteLine("");
                 Console.WriteLine("---------------------------------------------------------");
                 Console.WriteLine("Order_id\t\t" + "Item_id\t\t" + "Quantity");
 
-                while (details.Read())
+                while (allDetails.Read())
                 {
-                    if (!(details.Equals(null)))
+                    if (!(allDetails.Equals(null)))
                     {
                         Console.WriteLine(
-                            details.GetValue(0).ToString() + "\t\t\t" +
-                            details.GetValue(1).ToString() + "\t\t\t" +
-                            details.GetValue(2).ToString());
+                            allDetails.GetValue(0).ToString() + "\t\t\t" +
+                            allDetails.GetValue(1).ToString() + "\t\t\t" +
+                            allDetails.GetValue(2).ToString());
                     }
                 }
             }
             catch (SqlException sqlException)
             {
-                MessageBox.Show(sqlException.Message);
+                MessageBox.Show(sqlException.Message, "BtnGetAllDetails_Click");
             }
             finally
             {
-                conn.Close();
+                dbc_getAllOrdDet.Connection.Close();
             }
         }
         // Button to get the data in order details table
-        private void Button3_Click(object sender, EventArgs e)
+        private void BtnGetAllOrders_Click(object sender, EventArgs e)
         {
-            Env DatabaseLocation = new Env();
-            string ConnectionString = DatabaseLocation.SrvConn;
-            SqlConnection conn = new SqlConnection(connectionString: ConnectionString);
+            DbConnection dbc_getAllOrd = new DbConnection(new GetAllOrders().QueryString);
 
             try
             {
-                SqlCommand get_orders = new SqlCommand("select * from orders", conn);
-                conn.Open();
-                SqlDataReader orders = get_orders.ExecuteReader();
+                dbc_getAllOrd.Connection.Open();
+                SqlDataReader allOrders = dbc_getAllOrd.SqlCommand.ExecuteReader();
 
-                Console.WriteLine(" ");
+                Console.WriteLine("");
                 Console.WriteLine("---------------------------------------------------------");
                 Console.WriteLine("Order_id\t\t" + "Cust_id\t\t" + "Emp_id\t\t" + "Sub_Total\t\t" + "Tax\t\t\t" + "Pay");
-                while (orders.Read())
+
+                while (allOrders.Read())
                 {
-                    if (!(orders.Equals(null)))
+                    if (!(allOrders.Equals(null)))
                     {
                         Console.WriteLine(
-                            orders.GetValue(0).ToString() + "\t\t\t" + orders.GetValue(1).ToString() + "\t\t\t" +
-                            orders.GetValue(2).ToString() + "\t\t\t" + orders.GetDecimal(3).ToString("0.00") + "\t\t\t" +
-                            orders.GetValue(4).ToString() + "\t\t" + orders.GetValue(5).ToString());
+                            allOrders.GetValue(0).ToString() + "\t\t\t" +
+                            allOrders.GetValue(1).ToString() + "\t\t\t" +
+                            allOrders.GetValue(2).ToString() + "\t\t\t" +
+                            allOrders.GetDecimal(3).ToString("0.00") + "\t\t\t" +
+                            allOrders.GetDecimal(4).ToString() + "\t\t" +
+                            allOrders.GetValue(5).ToString().Trim());
                     }
                 }
             }
             catch (SqlException sqlException)
             {
-                MessageBox.Show(sqlException.Message);
+                MessageBox.Show(sqlException.Message, "BtnGetAllOrders_Click");
             }
             finally
             {
-                conn.Close();
+                dbc_getAllOrd.Connection.Close();
             }
         }
+        // Button to get all Customer IDs (Add data in the future)
+        private void BtnGetAllCustIDs_Click(object sender, EventArgs e)
+        {
+            DbConnection dbc_getAllCustIDs = new DbConnection(new GetAllCustIDs().QueryString);
+
+            try
+            {
+                dbc_getAllCustIDs.Connection.Open();
+                SqlDataReader allCustIDs = dbc_getAllCustIDs.SqlCommand.ExecuteReader();
+
+                Console.WriteLine(" ");
+                Console.WriteLine("---------------------------------------------------------");
+                Console.WriteLine("Cust_id");
+
+                while (allCustIDs.Read())
+                {
+                    if (!(allCustIDs.Equals(null)))
+                    {
+                        Console.WriteLine(allCustIDs.GetValue(0).ToString());
+                    }
+                }
+            }
+            catch (SqlException sqlException)
+            {
+                MessageBox.Show(sqlException.Message, "BtnGetAllCustIDs_Click");
+            }
+            finally
+            {
+                dbc_getAllCustIDs.Connection.Close();
+            }
+        }
+        // Button to get all Employee IDs (Add data in the future)
+        private void BtnGetAllEmpIDs_Click(object sender, EventArgs e)
+        {
+            DbConnection dbc_getAllEmpIDs = new DbConnection(new GetAllEmpIDs().QueryString);
+
+            try
+            {
+                dbc_getAllEmpIDs.Connection.Open();
+                SqlDataReader allEmpIDs = dbc_getAllEmpIDs.SqlCommand.ExecuteReader();
+
+                Console.WriteLine(" ");
+                Console.WriteLine("---------------------------------------------------------");
+                Console.WriteLine("Emp_id");
+
+                while (allEmpIDs.Read())
+                {
+                    if (!(allEmpIDs.Equals(null)))
+                    {
+                        Console.WriteLine(allEmpIDs.GetValue(0).ToString());
+                    }
+                }
+            }
+            catch (SqlException sqlException)
+            {
+                MessageBox.Show(sqlException.Message, "BtnGetAllEmpIDs_Click");
+            }
+            finally
+            {
+                dbc_getAllEmpIDs.Connection.Close();
+            }
+        }
+        // Button to get a list of all data in Order_Stages
+        private void BtnGetAllOrderStages_Click(object sender, EventArgs e)
+        {
+            DbConnection dbc_getAllOrderStages = new DbConnection(new GetAllOrders().QueryString);
+
+            try
+            {
+                dbc_getAllOrderStages.Connection.Open();
+                SqlDataReader allOrdersStages = dbc_getAllOrderStages.SqlCommand.ExecuteReader();
+
+                Console.WriteLine(" ");
+                Console.WriteLine("---------------------------------------------------------");
+                Console.WriteLine("Order_id\t\t" + "Cust_id");
+                
+                while (allOrdersStages.Read())
+                {
+                    if (!(allOrdersStages.Equals(null)))
+                    {
+                        Console.WriteLine(
+                            allOrdersStages.GetValue(0).ToString() + "\t\t\t" +
+                            allOrdersStages.GetValue(1).ToString());
+                    }
+                }
+            }
+            catch (SqlException sqlException)
+            {
+                MessageBox.Show(sqlException.Message, "BtnGetAllOrderStages_Click");
+            }
+            finally
+            {
+                dbc_getAllOrderStages.Connection.Close();
+            }
+        }
+
+        /*************************************************************************************************/
+        /*                                Functions to setup initial data                                */
         // Deletes the orders already in the database
         private void ClearDefaultOrders()
         {
@@ -463,160 +608,183 @@ namespace CS488LocalDB
             }
             catch (SqlException sqlException)
             {
-                MessageBox.Show(sqlException.Message);
+                MessageBox.Show(sqlException.Message, "ClearDefaultOrders");
             }
             finally
             {
                 dbc.Connection.Close();
             }
         }
-        // Inserts 2 orders and associated details
-        private void InsertDefaultData()
-        {
-            List<InsertDefaultDetails> defdet1 = new List<InsertDefaultDetails>();
-            List<InsertDefaultDetails> defdet2 = new List<InsertDefaultDetails>();
-            InsertDefaultOrders deford1 = new
-                InsertDefaultOrders(100, 1, (decimal)37.97, (decimal).1, "check");
-            InsertDefaultOrders deford2 = new
-                InsertDefaultOrders(100, 1, (decimal)53.98, (decimal).1, "cash");
-            DbConnection dbc1 = new DbConnection(deford1.QueryString);
-            dbc1.SqlCommand.Parameters.AddWithValue("@cust_id", deford1.Custid);
-            dbc1.SqlCommand.Parameters.AddWithValue("@emp_id", deford1.Empid);
-            dbc1.SqlCommand.Parameters.AddWithValue("@sub_tot", deford1.Subtot);
-            dbc1.SqlCommand.Parameters.AddWithValue("@tax", deford1.Tax);
-            dbc1.SqlCommand.Parameters.AddWithValue("@pay_type", deford1.Pay);
-            DbConnection dbc2 = new DbConnection(deford2.QueryString);
-            dbc2.SqlCommand.Parameters.AddWithValue("@cust_id", deford2.Custid);
-            dbc2.SqlCommand.Parameters.AddWithValue("@emp_id", deford2.Empid);
-            dbc2.SqlCommand.Parameters.AddWithValue("@sub_tot", deford2.Subtot);
-            dbc2.SqlCommand.Parameters.AddWithValue("@tax", deford2.Tax);
-            dbc2.SqlCommand.Parameters.AddWithValue("@pay_type", deford2.Pay);
-
-            int dbc1_OrdID = 0;
-            int dbc2_OrdID = 0;
-
-            try
-            {
-                dbc1.Connection.Open();
-                dbc1_OrdID = (int)dbc1.SqlCommand.ExecuteScalar();
-                dbc2.Connection.Open();
-                dbc2_OrdID = (int)dbc2.SqlCommand.ExecuteScalar();
-            }
-            catch (SqlException sqlException)
-            {
-                MessageBox.Show(sqlException.Message);
-            }
-            finally
-            {
-                dbc1.Connection.Close();
-                dbc2.Connection.Close();
-            }
-
-            if ((dbc1_OrdID > 0) && (dbc2_OrdID > 0))
-            {
-                DbConnection dbc3 = new DbConnection(new InsertDefaultDetails().QueryString);
-                // Order 1 details
-                defdet1.Add(new InsertDefaultDetails((int)dbc1_OrdID, 1, 1));
-                defdet1.Add(new InsertDefaultDetails((int)dbc1_OrdID, 3, 1));
-                defdet1.Add(new InsertDefaultDetails((int)dbc1_OrdID, 13, 1));
-                defdet1.Add(new InsertDefaultDetails((int)dbc1_OrdID, 21, 1));
-                // Order 2 details
-                defdet2.Add(new InsertDefaultDetails((int)dbc2_OrdID, 13, 2));
-                defdet2.Add(new InsertDefaultDetails((int)dbc2_OrdID, 23, 1));
-                defdet2.Add(new InsertDefaultDetails((int)dbc2_OrdID, 41, 2));
-
-                // Order 1 details
-                foreach (InsertDefaultDetails det in defdet1)
-                {
-                    dbc3.SqlCommand.Parameters.AddWithValue("@order_id", det.Orderid);
-                    dbc3.SqlCommand.Parameters.AddWithValue("@menu_id", det.Itemid);
-                    dbc3.SqlCommand.Parameters.AddWithValue("@qty", det.Qty);
-                    try
-                    {
-                        dbc3.Connection.Open();
-                        dbc3.SqlCommand.ExecuteNonQuery();
-                    }
-                    catch (SqlException sqlException)
-                    {
-                        MessageBox.Show(sqlException.Message);
-                    }
-                    finally
-                    {
-                        dbc3.SqlCommand.Parameters.Clear();
-                        dbc3.Connection.Close();
-                    }
-                }
-                // Order 2 details
-                foreach (InsertDefaultDetails det in defdet2)
-                {
-                    dbc3.SqlCommand.Parameters.AddWithValue("@order_id", det.Orderid);
-                    dbc3.SqlCommand.Parameters.AddWithValue("@menu_id", det.Itemid);
-                    dbc3.SqlCommand.Parameters.AddWithValue("@qty", det.Qty);
-                    try
-                    {
-                        dbc3.Connection.Open();
-                        dbc3.SqlCommand.ExecuteNonQuery();
-                    }
-                    catch (SqlException sqlException)
-                    {
-                        MessageBox.Show(sqlException.Message);
-                    }
-                    finally
-                    {
-                        dbc3.SqlCommand.Parameters.Clear();
-                        dbc3.Connection.Close();
-                    }
-                }
-            }
-        }
         // Inserts order stages into the database
         private void InsertPrepStages()
         {
-            InsertPrepStages stages = new InsertPrepStages();
-            DbConnection dbc1 = new DbConnection(stages.QueryString);
-            DbConnection dbc2 = new DbConnection(stages.QueryString);
-            DbConnection dbc3 = new DbConnection(stages.QueryString);
+            InsertPrepStages Stages = new InsertPrepStages();
+            DbConnection dbc1 = new DbConnection(Stages.QueryString);
+            DbConnection dbc2 = new DbConnection(Stages.QueryString);
+            DbConnection dbc3 = new DbConnection(Stages.QueryString);
+            DbConnection dbc4 = new DbConnection(Stages.QueryString);
 
-            dbc1.SqlCommand.Parameters.AddWithValue("@id", stages.Stage1_id);
-            dbc1.SqlCommand.Parameters.AddWithValue("@name", stages.Stage1_Name);
-            dbc1.SqlCommand.Parameters.AddWithValue("@desc", stages.Stage1_Desc);
-            dbc2.SqlCommand.Parameters.AddWithValue("@id", stages.Stage2_id);
-            dbc2.SqlCommand.Parameters.AddWithValue("@name", stages.Stage2_Name);
-            dbc2.SqlCommand.Parameters.AddWithValue("@desc", stages.Stage2_Desc);
-            dbc3.SqlCommand.Parameters.AddWithValue("@id", stages.Stage3_id);
-            dbc3.SqlCommand.Parameters.AddWithValue("@name", stages.Stage3_Name);
-            dbc3.SqlCommand.Parameters.AddWithValue("@desc", stages.Stage3_Desc);
+            dbc1.SqlCommand.Parameters.AddWithValue("@id", Stages.Stage1_id);
+            dbc1.SqlCommand.Parameters.AddWithValue("@name", Stages.Stage1_Name);
+            dbc1.SqlCommand.Parameters.AddWithValue("@desc", Stages.Stage1_Desc);
+            dbc2.SqlCommand.Parameters.AddWithValue("@id", Stages.Stage2_id);
+            dbc2.SqlCommand.Parameters.AddWithValue("@name", Stages.Stage2_Name);
+            dbc2.SqlCommand.Parameters.AddWithValue("@desc", Stages.Stage2_Desc);
+            dbc3.SqlCommand.Parameters.AddWithValue("@id", Stages.Stage3_id);
+            dbc3.SqlCommand.Parameters.AddWithValue("@name", Stages.Stage3_Name);
+            dbc3.SqlCommand.Parameters.AddWithValue("@desc", Stages.Stage3_Desc);
+            dbc4.SqlCommand.Parameters.AddWithValue("@id", Stages.Stage4_id);
+            dbc4.SqlCommand.Parameters.AddWithValue("@name", Stages.Stage4_Name);
+            dbc4.SqlCommand.Parameters.AddWithValue("@desc", Stages.Stage4_Desc);
 
             try
             {
                 dbc1.Connection.Open();
-                dbc2.Connection.Open();
-                dbc3.Connection.Open();
                 dbc1.SqlCommand.ExecuteNonQuery();
+                dbc2.Connection.Open();
                 dbc2.SqlCommand.ExecuteNonQuery();
+                dbc3.Connection.Open();
                 dbc3.SqlCommand.ExecuteNonQuery();
+                dbc4.Connection.Open();
+                dbc4.SqlCommand.ExecuteNonQuery();
             }
             catch (SqlException sqlException)
             {
-                MessageBox.Show(sqlException.Message);
+                MessageBox.Show(sqlException.Message, "InsertPrepStages");
             }
             finally
             {
                 dbc1.Connection.Close();
                 dbc2.Connection.Close();
                 dbc3.Connection.Close();
+                dbc4.Connection.Close();
+            }
+        }
+        // Inserts 4 orders and associated details
+        private void InsertDefaultOrders()
+        {
+            // Default data for orders 1 and 2 for table Orders
+            List<InsertDefaultOrders> DefOrders = new List<InsertDefaultOrders>();
+            DefOrders.Add(new InsertDefaultOrders(100, 1, (decimal)37.97, (decimal).1, "check"));
+            DefOrders.Add(new InsertDefaultOrders(100, 1, (decimal)53.98, (decimal).1, "cash"));
+            DefOrders.Add(new InsertDefaultOrders(100, 1, (decimal)35.49, (decimal).1, "credit"));
+            DefOrders.Add(new InsertDefaultOrders(100, 1, (decimal)454.80, (decimal).1, "credit"));
+            DbConnection dbc_AddDefaultOrder;
+            DbConnection dbc_InsertOrderStage;
+
+            int[] stage = { 1, 4, 2, 3 };
+            int order_id;
+            int i = 0;
+            
+            foreach (InsertDefaultOrders order in DefOrders)
+            {
+                order_id = 0;
+                dbc_AddDefaultOrder = new DbConnection(order.QueryString);
+                dbc_AddDefaultOrder.SqlCommand.Parameters.AddWithValue( "@cust_id", order.Custid);
+                dbc_AddDefaultOrder.SqlCommand.Parameters.AddWithValue(  "@emp_id", order.Empid);
+                dbc_AddDefaultOrder.SqlCommand.Parameters.AddWithValue( "@sub_tot", order.Subtot);
+                dbc_AddDefaultOrder.SqlCommand.Parameters.AddWithValue(     "@tax", order.Tax);
+                dbc_AddDefaultOrder.SqlCommand.Parameters.AddWithValue("@pay_type", order.Pay);
+                
+                try
+                {
+                    dbc_AddDefaultOrder.Connection.Open();
+                    order_id = (int)dbc_AddDefaultOrder.SqlCommand.ExecuteScalar();
+                    dbc_InsertOrderStage = new DbConnection(new InsertOrderStages().QueryString);
+                    dbc_InsertOrderStage.SqlCommand.Parameters.AddWithValue("@order_id", order_id);
+                    dbc_InsertOrderStage.SqlCommand.Parameters.AddWithValue("@stage_id", stage[i]);
+                    try
+                    {
+                        dbc_InsertOrderStage.Connection.Open();
+                        Console.WriteLine(dbc_InsertOrderStage.SqlCommand.ExecuteNonQuery());
+                    }
+                    catch (SqlException SqlException)
+                    { MessageBox.Show(SqlException.Message, "InsertDefaultOrders: Order Stage"); }
+                    finally
+                    {
+                        dbc_InsertOrderStage.SqlCommand.Parameters.Clear();
+                        dbc_InsertOrderStage.Connection.Close();
+                    }
+                }
+                catch (SqlException SqlException)
+                {
+                    MessageBox.Show(SqlException.Message, "InsertDefaultOrders 1");
+                }
+                finally
+                {
+                    dbc_AddDefaultOrder.SqlCommand.Parameters.Clear();
+                    dbc_AddDefaultOrder.Connection.Close();
+                    if(!(order_id.Equals(0)))
+                    {
+                        InsertDefaultOrderDetails(order_id, i);
+                        i++;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Order_id equals 0. Order_id: " + order_id);
+                    }
+                }
+            }
+        }
+        // Insert the Order Details for the Default Orders
+        private void InsertDefaultOrderDetails(int orderId, int index)
+        {
+            DbConnection DefDetails; // = new InsertDefaultDetails;
+            List<int[,]> InitialDetails = new List<int[,]>();
+            int[,] Ord1 = {  { 1, 1 },  { 3,  1 },  { 13,  1 },  { 21,  1 } };
+            int[,] Ord2 = { { 13, 2 }, { 23,  1 },  { 41,  2 } };
+            int[,] Ord3 = { { 13, 1 }, { 33,  1 },  { 42,  1 } };
+            int[,] Ord4 = { { 3, 10 }, { 13, 10 }, { 33, 10 }, { 41, 10 } };
+            InitialDetails.Add(Ord1);
+            InitialDetails.Add(Ord2);
+            InitialDetails.Add(Ord3);
+            InitialDetails.Add(Ord4);
+            int[,] CurrentOrder = InitialDetails[index];
+
+            for (int i = 0; i < CurrentOrder.Length/2; i++)
+            {
+                DefDetails = new DbConnection(new InsertDefaultDetails().QueryString);
+                DefDetails.SqlCommand.Parameters.AddWithValue("@order_id", orderId);
+                DefDetails.SqlCommand.Parameters.AddWithValue("@menu_id", CurrentOrder[i,0]);
+                DefDetails.SqlCommand.Parameters.AddWithValue("@qty", CurrentOrder[i,1]);
+                try
+                {
+                    DefDetails.Connection.Open();
+                    DefDetails.SqlCommand.ExecuteNonQuery();
+                }
+                catch (SqlException SqlException)
+                {
+                    MessageBox.Show(SqlException.Message, "InsertDefaultOrderDetails");
+                }
+                finally
+                {
+                    DefDetails.SqlCommand.Parameters.Clear();
+                    DefDetails.Connection.Close();
+                }
             }
         }
 
+        /*************************************************************************************************/
+        /*                               Tool Strip Menu for page changing                               */
+        // Show Place Order Panel
+        private void PlaceOrderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            CreateOrderPanel.Visible = true;
+            TrackOrderPanel.Visible = false;
+        }
+        // Show Track Order Panel
+        private void TrackOrderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            CreateOrderPanel.Visible = false;
+            TrackOrderPanel.Visible = true;
+        }
         private void CustomerToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            MenuPanel.Visible = true;
             // Employee panel false
         }
-
+        // Tool Strip Menu for Employees
         private void EmployeeToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            MenuPanel.Visible = false;
             // Employee panel true
         }
     }
