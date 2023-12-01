@@ -90,6 +90,7 @@ namespace CS488LocalDB
                 Height = innerHeight,
                 Anchor = AnchorStyles.Left,
                 BorderStyle = BorderStyle.FixedSingle,
+                BackColor = Color.Beige,
                 Visible = true
             };
 
@@ -856,6 +857,56 @@ namespace CS488LocalDB
         private void EmployeeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // Employee panel true
+        }
+
+        private void trackView_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblOrdStage_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblTrackTot_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblTxtDesc_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblTxtStage_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblDesc_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void txtOrder_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblTrackOrder_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblTxtTrackTot_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label3_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
