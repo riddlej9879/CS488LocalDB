@@ -29,7 +29,6 @@ namespace CS488LocalDB
         /// </summary>
         private void InitializeComponent()
         {
-            this.mealPanel12 = new System.Windows.Forms.Panel();
             this.button2 = new System.Windows.Forms.Button();
             this.numBoxQty = new System.Windows.Forms.NumericUpDown();
             this.lblQty = new System.Windows.Forms.Label();
@@ -69,6 +68,8 @@ namespace CS488LocalDB
             this.trackOrderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.employeeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.TrackOrderPanel = new System.Windows.Forms.Panel();
+            this.lblTxtTrackTot = new System.Windows.Forms.Label();
+            this.lblTrackTot = new System.Windows.Forms.Label();
             this.lblTxtDesc = new System.Windows.Forms.Label();
             this.lblTxtStage = new System.Windows.Forms.Label();
             this.lblDesc = new System.Windows.Forms.Label();
@@ -82,32 +83,12 @@ namespace CS488LocalDB
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.label3 = new System.Windows.Forms.Label();
-            this.lblTxtTrackTot = new System.Windows.Forms.Label();
-            this.lblTrackTot = new System.Windows.Forms.Label();
-            this.mealPanel12.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numBoxQty)).BeginInit();
             this.CreateOrderPanel.SuspendLayout();
             this.paymentBox.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.TrackOrderPanel.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // mealPanel12
-            // 
-            this.mealPanel12.AutoScroll = true;
-            this.mealPanel12.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.mealPanel12.Controls.Add(this.button2);
-            this.mealPanel12.Controls.Add(this.numBoxQty);
-            this.mealPanel12.Controls.Add(this.lblQty);
-            this.mealPanel12.Controls.Add(this.lblMenuPrice);
-            this.mealPanel12.Controls.Add(this.mealPrice);
-            this.mealPanel12.Controls.Add(this.mealDesc);
-            this.mealPanel12.Controls.Add(this.mealName);
-            this.mealPanel12.Location = new System.Drawing.Point(4, 23);
-            this.mealPanel12.Name = "mealPanel12";
-            this.mealPanel12.Size = new System.Drawing.Size(400, 60);
-            this.mealPanel12.TabIndex = 1;
-            this.mealPanel12.Visible = false;
             // 
             // button2
             // 
@@ -192,7 +173,6 @@ namespace CS488LocalDB
             this.CreateOrderPanel.Controls.Add(this.orderView);
             this.CreateOrderPanel.Controls.Add(this.placeOrder);
             this.CreateOrderPanel.Controls.Add(this.CreateOrder);
-            this.CreateOrderPanel.Controls.Add(this.mealPanel12);
             this.CreateOrderPanel.Location = new System.Drawing.Point(158, 45);
             this.CreateOrderPanel.Name = "CreateOrderPanel";
             this.CreateOrderPanel.Size = new System.Drawing.Size(808, 914);
@@ -489,10 +469,31 @@ namespace CS488LocalDB
             this.TrackOrderPanel.Controls.Add(this.lblTrackOrder);
             this.TrackOrderPanel.Controls.Add(this.trackView);
             this.TrackOrderPanel.Controls.Add(this.label3);
-            this.TrackOrderPanel.Location = new System.Drawing.Point(12, 41);
+            this.TrackOrderPanel.Location = new System.Drawing.Point(65, 257);
             this.TrackOrderPanel.Name = "TrackOrderPanel";
             this.TrackOrderPanel.Size = new System.Drawing.Size(808, 914);
             this.TrackOrderPanel.TabIndex = 20;
+            // 
+            // lblTxtTrackTot
+            // 
+            this.lblTxtTrackTot.Anchor = System.Windows.Forms.AnchorStyles.Right;
+            this.lblTxtTrackTot.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblTxtTrackTot.Location = new System.Drawing.Point(54, 230);
+            this.lblTxtTrackTot.Name = "lblTxtTrackTot";
+            this.lblTxtTrackTot.Size = new System.Drawing.Size(105, 20);
+            this.lblTxtTrackTot.TabIndex = 15;
+            this.lblTxtTrackTot.Text = "$1,000,000.00";
+            this.lblTxtTrackTot.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
+            // lblTrackTot
+            // 
+            this.lblTrackTot.AutoSize = true;
+            this.lblTrackTot.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblTrackTot.Location = new System.Drawing.Point(4, 230);
+            this.lblTrackTot.Name = "lblTrackTot";
+            this.lblTrackTot.Size = new System.Drawing.Size(44, 17);
+            this.lblTrackTot.TabIndex = 14;
+            this.lblTrackTot.Text = "Total:";
             // 
             // lblTxtDesc
             // 
@@ -606,27 +607,6 @@ namespace CS488LocalDB
             this.label3.TabIndex = 0;
             this.label3.Text = "ENTER ORDER NUMBER";
             // 
-            // lblTxtTrackTot
-            // 
-            this.lblTxtTrackTot.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.lblTxtTrackTot.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblTxtTrackTot.Location = new System.Drawing.Point(54, 230);
-            this.lblTxtTrackTot.Name = "lblTxtTrackTot";
-            this.lblTxtTrackTot.Size = new System.Drawing.Size(105, 20);
-            this.lblTxtTrackTot.TabIndex = 15;
-            this.lblTxtTrackTot.Text = "$1,000,000.00";
-            this.lblTxtTrackTot.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            // 
-            // lblTrackTot
-            // 
-            this.lblTrackTot.AutoSize = true;
-            this.lblTrackTot.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblTrackTot.Location = new System.Drawing.Point(4, 230);
-            this.lblTrackTot.Name = "lblTrackTot";
-            this.lblTrackTot.Size = new System.Drawing.Size(44, 17);
-            this.lblTrackTot.TabIndex = 14;
-            this.lblTrackTot.Text = "Total:";
-            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -638,8 +618,7 @@ namespace CS488LocalDB
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "Form1";
             this.Text = "Form1";
-            this.mealPanel12.ResumeLayout(false);
-            this.mealPanel12.PerformLayout();
+            this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.numBoxQty)).EndInit();
             this.CreateOrderPanel.ResumeLayout(false);
             this.CreateOrderPanel.PerformLayout();
@@ -655,7 +634,6 @@ namespace CS488LocalDB
         }
 
         #endregion
-        private System.Windows.Forms.Panel mealPanel12;
         private System.Windows.Forms.Label mealPrice;
         private System.Windows.Forms.Label mealDesc;
         private System.Windows.Forms.Label mealName;
