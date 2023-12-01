@@ -25,7 +25,7 @@ namespace CS488LocalDB
         decimal decSubTot = 0;
         decimal decTotal = 0;
         readonly double dblTaxRate = .1;
-        
+
         public Form1()
         {
             InitializeComponent();
@@ -39,7 +39,7 @@ namespace CS488LocalDB
             TrackOrderPanel.Location = new Point(12, 27);
 
             DbConnection dbc_menu = new DbConnection(new GetDatabaseMenu().QueryString);
-
+            
             try
             {
                 dbc_menu.Connection.Open();
@@ -81,6 +81,7 @@ namespace CS488LocalDB
                 dbc_menu.Connection.Close();
             }
         }
+
         // Creates panels to display items available to order
         public Panel CreateMenuPanel(MenuItem Meal)
         {
@@ -163,6 +164,7 @@ namespace CS488LocalDB
 
             return newMealPanel;
         }
+
         // Clears mutable fields and objects
         public void ResetComponents()
         {
@@ -178,6 +180,7 @@ namespace CS488LocalDB
 
             return;
         }
+
         // Returns Customer ID
         private int GetCustID()
         {
@@ -208,11 +211,11 @@ namespace CS488LocalDB
 
             return cust_number;
         }
+
         // Returns Employee ID
         private int GetEmpID()
         {
             DbConnection dbc_empId = new DbConnection(new GetEmployeeID().QueryString);
-
             int emp_number = 0;
 
             try
@@ -238,11 +241,12 @@ namespace CS488LocalDB
 
             return emp_number;
         }
+
         // Submits Order and returns the Order ID
         private int GetOrderID(int cust_id, int emp_id, decimal sub_tot, decimal tax, string pay_type)
         {
-            int order_number = 0;
             DbConnection dbc_orderId = new DbConnection(new GetOrderID().QueryString);
+            int order_number = 0;
 
             dbc_orderId.SqlCommand.Parameters.AddWithValue("@cust_id", cust_id);
             dbc_orderId.SqlCommand.Parameters.AddWithValue("@emp_id", emp_id);
@@ -266,6 +270,7 @@ namespace CS488LocalDB
 
             return order_number;
         }
+
         // Gets order total
         private string GetTrackTotal(int order_id)
         {
@@ -296,6 +301,8 @@ namespace CS488LocalDB
 
             return total;
         }
+
+        // Populates the ListBox with the order being tracked.
         private void TrackOrderList(int order_id)
         {
             trackView.Items.Clear();
@@ -339,7 +346,6 @@ namespace CS488LocalDB
                 dbc_TrackOrderDetails.Connection.Close();
             }
         }
-
         /*************************************************************************************************/
         /*                                     Button_Click Handlers                                     */
         // Creates list of items with values greater than 0
@@ -404,6 +410,7 @@ namespace CS488LocalDB
             decTotal = (decSubTot + (decSubTot * (decimal)dblTaxRate));
             total.Text = decTotal.ToString("C");
         }
+
         // Sends ordered items to the database
         private void PlaceOrder_Click(object sender, EventArgs e)
         {
@@ -454,11 +461,13 @@ namespace CS488LocalDB
                 }
             }
         }
+
         // Customer Track Order page
         private void BtnTrackOrder_Click(object sender, EventArgs e)
         {
             lblTxtStage.Text = "--";
             lblTxtDesc.Text = "--";
+
             if (int.TryParse(txtOrder.Text, out int order))
             {
                 string TestQuery = "select order_id, order_stages.prep_stage_id, prep_stage_name, prep_stage_desc from order_stages full join prep_stages on order_stages.prep_stage_id = prep_stages.prep_stage_id where order_id = @order_id";
@@ -500,6 +509,7 @@ namespace CS488LocalDB
                 MessageBox.Show("Please enter a valid number", "No Order Number");
             }
         }
+
         // Button to get the orders stored in the database
         private void BtnGetAllDetails_Click(object sender, EventArgs e)
         {
@@ -534,6 +544,7 @@ namespace CS488LocalDB
                 dbc_getAllOrdDet.Connection.Close();
             }
         }
+
         // Button to get the data in order details table
         private void BtnGetAllOrders_Click(object sender, EventArgs e)
         {
@@ -571,6 +582,7 @@ namespace CS488LocalDB
                 dbc_getAllOrd.Connection.Close();
             }
         }
+
         // Button to get all Customer IDs (Add data in the future)
         private void BtnGetAllCustIDs_Click(object sender, EventArgs e)
         {
@@ -602,6 +614,7 @@ namespace CS488LocalDB
                 dbc_getAllCustIDs.Connection.Close();
             }
         }
+
         // Button to get all Employee IDs (Add data in the future)
         private void BtnGetAllEmpIDs_Click(object sender, EventArgs e)
         {
@@ -633,6 +646,7 @@ namespace CS488LocalDB
                 dbc_getAllEmpIDs.Connection.Close();
             }
         }
+
         // Button to get a list of all data in Order_Stages
         private void BtnGetAllOrderStages_Click(object sender, EventArgs e)
         {
@@ -666,7 +680,6 @@ namespace CS488LocalDB
                 dbc_getAllOrderStages.Connection.Close();
             }
         }
-
         /*************************************************************************************************/
         /*                                Functions to setup initial data                                */
         // Deletes the orders already in the database
@@ -689,6 +702,7 @@ namespace CS488LocalDB
                 dbc.Connection.Close();
             }
         }
+
         // Inserts order stages into the database
         private void InsertPrepStages()
         {
@@ -734,6 +748,7 @@ namespace CS488LocalDB
                 dbc4.Connection.Close();
             }
         }
+
         // Inserts 4 orders and associated details
         private void InsertDefaultOrders()
         {
@@ -796,6 +811,7 @@ namespace CS488LocalDB
                 }
             }
         }
+
         // Insert the Order Details for the Default Orders
         private void InsertDefaultOrderDetails(int orderId, int index)
         {
@@ -833,7 +849,6 @@ namespace CS488LocalDB
                 }
             }
         }
-
         /*************************************************************************************************/
         /*                               Tool Strip Menu for page changing                               */
         // Show Place Order Panel
@@ -842,20 +857,32 @@ namespace CS488LocalDB
             CreateOrderPanel.Visible = true;
             TrackOrderPanel.Visible = false;
         }
+
         // Show Track Order Panel
         private void TrackOrderToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CreateOrderPanel.Visible = false;
             TrackOrderPanel.Visible = true;
         }
+
+        /*************************************************************************************************/
+        /*                                     Currently no function                                     */
+        // Tool Strip Menu for Customers
         private void CustomerToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // Employee panel false
         }
+        
         // Tool Strip Menu for Employees
         private void EmployeeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // Employee panel true
+        }
+        
+        // Save the database on close
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }
